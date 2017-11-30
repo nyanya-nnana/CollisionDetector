@@ -1,2 +1,2 @@
 # CollisionDetector
-CollisionDetector improves collision detections in you Unity Project
+CollisionDetector improves collision detections in your Unity Project
