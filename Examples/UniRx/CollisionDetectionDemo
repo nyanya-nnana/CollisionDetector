@@ -1,0 +1,50 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UniRx;
+using UniRx.Triggers;
+using NnanaSoft.CollisionDetector;
+
+public class CollisionDetectionDemo : MonoBehaviour
+{
+	CollisionDetector GroundCollision;
+	public float height;
+	public float cycle;
+
+	// Use this for initialization
+	void Start()
+	{
+		// コンポーネントを取得
+		Rigidbody rb = GetComponent<Rigidbody>();
+		GroundCollision = GetComponent<CollisionDetector>();
+
+		// 一定時間おきに地面から離れたところに移動
+		Observable.Timer(System.TimeSpan.FromSeconds(0.0f), System.TimeSpan.FromSeconds(cycle))
+			.Subscribe(other =>
+			{
+				rb.position = height * Vector3.up;
+			});
+
+		// OnCollisionEnter
+		GroundCollision.OnCollisionEnterSmoothedAsObservable
+			.Subscribe(other =>
+			{
+				// ここに処理を記述
+				Debug.Log("OnCollisionEnterSmoothed");
+			});
+		// OnCollisionStay
+		GroundCollision.OnCollisionStaySmoothedAsObservable
+			.Subscribe(other =>
+			{
+				// ここに処理を記述
+				Debug.Log("OnCollisionStaySmoothed");
+			});
+		// OnCollisionExit
+		GroundCollision.OnCollisionEnterSmoothedAsObservable
+			.Subscribe(other =>
+			{
+				// ここに処理を記述
+				Debug.Log("OnCollisionExitSmoothed");
+			});
+	}
+}
