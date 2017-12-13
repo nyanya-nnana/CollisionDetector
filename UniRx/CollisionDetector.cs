@@ -34,7 +34,10 @@ namespace NnanaSoft.CollisionDetector
 				CalculateFilterConstant();
 			}
 		}
+		// フィルタ用の定数：大きいほど衝突判定が変化しにくくなり安定
 		private float _filterConstant;
+		// Time.fixedDeltaTimeの変化を監視
+		private float _fixedDeltaTimeObserved;
 		// 衝突判定の閾値：上限と下限を用意して判定の変化にヒステリシスを持たせる
 		[Range(0.0f, 1.0f)] public float detectionThresholdUpper = 0.9f;
 		[Range(0.0f, 1.0f)] public float detectionThresholdLower = 0.1f;
@@ -53,7 +56,7 @@ namespace NnanaSoft.CollisionDetector
 		// カットオフ周波数から衝突判定平滑用の定数を計算
 		public void CalculateFilterConstant()
 		{
-			_filterConstant = Mathf.Exp(-CutOffFrequency * Time.fixedDeltaTime);
+			_filterConstant = Mathf.Exp(-CutOffFrequency * _fixedDeltaTimeObserved);
 		}
 		// インスペクタ上でカットオフ周波数を変更した時用
 		private void OnValidate()
@@ -69,6 +72,7 @@ namespace NnanaSoft.CollisionDetector
 				_onCollisionFloat = 1.0f;
 			else
 				_onCollisionFloat = 0.0f;
+			_fixedDeltaTimeObserved = Time.fixedDeltaTime;
 			CalculateFilterConstant();
 
 			// OnCollisionEnter
@@ -95,7 +99,6 @@ namespace NnanaSoft.CollisionDetector
 				});
 			// OnCollisionExit
 			this.OnCollisionExitAsObservable()
-				.Where(other => other.gameObject.CompareTag(targetTag))
 				.Subscribe(other =>
 				{
 					// タグが一致しない場合は何もしない
@@ -109,6 +112,13 @@ namespace NnanaSoft.CollisionDetector
 			this.FixedUpdateAsObservable()
 				.Subscribe(_ =>
 				{
+					// Time.fixedDeltaTimeが変更された場合はフィルタの定数を更新
+					if (Mathf.Approximately(Time.fixedDeltaTime, _fixedDeltaTimeObserved) == false)
+					{
+						_fixedDeltaTimeObserved = Time.fixedDeltaTime;
+						CalculateFilterConstant();
+					}
+
 					// 1サイクル前の衝突情報を保持してEnter, Stay, Exitの判定に使用
 					bool onCollisionPrevious = _onCollision;
 					int onCollisionCurrent = 0;
